@@ -1,10 +1,12 @@
 require_relative 'db_connection'
 require_relative '01_mass_object'
 require 'active_support/inflector'
+require 'debugger'
 
 class MassObject
   def self.parse_all(results)
     # ...
+
   end
 end
 
@@ -15,10 +17,16 @@ class SQLObject < MassObject
 
   def self.table_name=(table_name)
     # ...
+    @table_name = table_name
+    @table_name
   end
 
   def self.table_name
     # ...
+    if @table_name == nil
+      @table_name = self.to_s.underscore.pluralize
+    end
+    @table_name
   end
 
   def self.all
@@ -31,6 +39,9 @@ class SQLObject < MassObject
 
   def attributes
     # ...
+    #debugger
+    @attributes ||= []
+    @attributes +=
   end
 
   def insert

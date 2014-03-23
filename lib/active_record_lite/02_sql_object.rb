@@ -1,11 +1,8 @@
 require_relative 'db_connection'
 require_relative '01_mass_object'
 require 'active_support/inflector'
-require 'debugger'
 
 class MassObject
-
-  my_attr_accessor :a
 
   def self.parse_all(results)
     # ...
@@ -17,7 +14,25 @@ class SQLObject < MassObject
   def self.columns
     # ...
     cols = DBConnection.execute2("SELECT * FROM #{self.table_name}")[0]
-    cols.map {|col| col.to_sym}
+    cols.each do |col|
+      self.class_eval %Q"
+        def #{col}
+           @#{col}
+        end
+      "
+      self.class_eval %Q"
+        def #{col}=value
+          @#{col}=value
+        end
+      "
+
+    end
+    return cols
+  end
+
+  def self.parse_all(results)
+    # ...
+    results.map{ |attrs| self.new(attrs) }
   end
 
   def self.table_name=(table_name)
@@ -36,41 +51,69 @@ class SQLObject < MassObject
 
   def self.all
     # ...
-    DBConnection.execute(<<-SQL,columns)
-
+    results = DBConnection.execute(<<-SQL)
       SELECT
-      #{table_name}.*
+        *
       FROM
-      columns[i]
+      #{self.table_name}
 
     SQL
+
+    return self.parse_all(results)
   end
 
   def self.find(id)
     # ...
+    results = DBConnection.execute(<<-SQL, {id: id})
+      SELECT
+        *
+      FROM
+      #{self.table_name}
+      WHERE
+        id = :id
+
+    SQL
+
+    return self.parse_all(results)[0]
   end
 
   def attributes
     # ...
-    @a = 1
     @attributes ||= {}
-    i_vars = self.instance_variables
-    i_vars.each_with_index do |i_var, i|
-      temp_var = "#{i_vars[i]}".gsub('@', '')
-      @attributes[temp_var.to_sym] = instance_variable_get i_var
-    end
-    return @attributes
+  end
+
+  def attribute_values
+    # ...
+    @attributes.values
   end
 
   def insert
     # ...
+    arr = []
+    number = self.class.columns.count - 1
+    names = self.class.columns[1..-1].join(",")
+    q_marks = (["?"]*number).join(",")
+
+    results = DBConnection.execute(<<-SQL, attribute_values)
+      INSERT INTO
+        #{self.class.table_name} (#{names})
+      VALUES
+        (#{q_marks})
+    SQL
+
+    self.id = DBConnection.last_insert_row_id
+
   end
 
-  def initialize
+  def initialize(options = {})
     # ...
+    attributes
     options.each do |attr_name,value|
-      foo = "#{attr_name}".gsub('@', '').to_sym
-      raise 'lala' if table_name.include?(foo)
+      foo = "#{attr_name}".to_sym
+      raise 'lala' if self.class.columns.include?(foo)
+      #self.send(foo,)
+      instance_variable_set("@#{attr_name}", value)
+      @attributes[attr_name] = value
     end
   end
 
@@ -82,7 +125,4 @@ class SQLObject < MassObject
     # ...
   end
 
-  def attribute_values
-    # ...
-  end
 end

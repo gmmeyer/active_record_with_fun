@@ -57,7 +57,6 @@ class SQLObject < MassObject
         *
       FROM
       #{self.table_name}
-
     SQL
 
     return self.parse_all(results)

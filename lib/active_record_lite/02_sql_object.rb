@@ -23,6 +23,7 @@ class SQLObject < MassObject
       self.class_eval %Q"
         def #{col}=value
           @#{col}=value
+          @attributes[:#{col}] = value
         end
       "
 
@@ -77,6 +78,19 @@ class SQLObject < MassObject
     return self.parse_all(results)[0]
   end
 
+  def initialize(options = {})
+    # ...
+    attributes
+    options.each do |attr_name,value|
+      foo = "#{attr_name}".to_sym
+      raise 'lala' if self.class.columns.include?(foo)
+      #self.send(foo,)
+      instance_variable_set("@#{attr_name}", value)
+      p attr_name
+      @attributes[attr_name.to_sym] = value
+    end
+  end
+
   def attributes
     # ...
     @attributes ||= {}
@@ -105,24 +119,29 @@ class SQLObject < MassObject
 
   end
 
-  def initialize(options = {})
-    # ...
-    attributes
-    options.each do |attr_name,value|
-      foo = "#{attr_name}".to_sym
-      raise 'lala' if self.class.columns.include?(foo)
-      #self.send(foo,)
-      instance_variable_set("@#{attr_name}", value)
-      @attributes[attr_name] = value
-    end
-  end
-
   def save
     # ...
+    if self.class.find(id).nil?
+      self.insert
+    else
+      self.update
+    end
+
   end
 
   def update
     # ...
+    set_line = self.class.columns.join( " = ?," ) + " = ?"
+
+    results = DBConnection.execute(<<-SQL, attribute_values + [self.id])
+      UPDATE
+        #{self.class.table_name}
+      SET
+        #{set_line}
+      WHERE
+        id = ?
+    SQL
+
   end
 
 end

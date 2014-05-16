@@ -5,14 +5,11 @@ require 'active_support/inflector'
 class MassObject
 
   def self.parse_all(results)
-    # ...
-
   end
 end
 
 class SQLObject < MassObject
   def self.columns
-    # ...
     cols = DBConnection.execute2("SELECT * FROM #{self.table_name}")[0]
     cols.each do |col|
       self.class_eval %Q"
@@ -32,18 +29,15 @@ class SQLObject < MassObject
   end
 
   def self.parse_all(results)
-    # ...
     results.map{ |attrs| self.new(attrs) }
   end
 
   def self.table_name=(table_name)
-    # ...
     @table_name = table_name
     @table_name
   end
 
   def self.table_name
-    # ...
     if @table_name == nil
       @table_name = self.to_s.underscore.pluralize
     end
@@ -51,7 +45,6 @@ class SQLObject < MassObject
   end
 
   def self.all
-    # ...
     results = DBConnection.execute(<<-SQL)
       SELECT
         *
@@ -63,7 +56,6 @@ class SQLObject < MassObject
   end
 
   def self.find(id)
-    # ...
     results = DBConnection.execute(<<-SQL, {id: id})
       SELECT
         *
@@ -78,7 +70,6 @@ class SQLObject < MassObject
   end
 
   def initialize(options = {})
-    # ...
     attributes
     options.each do |attr_name,value|
       foo = "#{attr_name}".to_sym
@@ -91,17 +82,14 @@ class SQLObject < MassObject
   end
 
   def attributes
-    # ...
     @attributes ||= {}
   end
 
   def attribute_values
-    # ...
     @attributes.values
   end
 
   def insert
-    # ...
     arr = []
     number = self.class.columns.count - 1
     names = self.class.columns[1..-1].join(",")
@@ -119,7 +107,6 @@ class SQLObject < MassObject
   end
 
   def save
-    # ...
     if self.class.find(id).nil?
       self.insert
     else
@@ -129,7 +116,6 @@ class SQLObject < MassObject
   end
 
   def update
-    # ...
     set_line = self.class.columns.join( " = ?," ) + " = ?"
 
     results = DBConnection.execute(<<-SQL, attribute_values + [self.id])

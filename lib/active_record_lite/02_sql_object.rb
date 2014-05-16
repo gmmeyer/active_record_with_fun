@@ -5,7 +5,6 @@ require 'active_support/inflector'
 class MassObject
 
   def self.parse_all(results)
-
   end
 end
 
@@ -108,7 +107,6 @@ class SQLObject < MassObject
   end
 
   def save
-    # ...
     if self.class.find(id).nil?
       self.insert
     else
@@ -118,7 +116,6 @@ class SQLObject < MassObject
   end
 
   def update
-    # ...
     set_line = self.class.columns.join( " = ?," ) + " = ?"
 
     results = DBConnection.execute(<<-SQL, attribute_values + [self.id])
